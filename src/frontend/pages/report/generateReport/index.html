@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="../../../libs/bootstrap-5.0.2/css/bootstrap.min.css">
+  <link href="../../../libs/datatable/datatables.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../styles.css">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Biblioteca | Serviço | Relatórios</title>
+</head>
+
+<body>
+
+  <div class="d-flex main-content">
+    <!-- Barra lateral -->
+    <div class="flex-shrink-0 p-3 text-white bg-dark d-flex flex-column sidebar">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <svg class="bi me-2" width="40" height="32">
+          <use xlink:href="#bootstrap"></use>
+        </svg>
+        <span class="fs-4">Biblioteca</span>
+      </a>
+      <hr>
+      <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+          <a href="/pages/services/listServices/index.html" class="nav-link text-white">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#database-fill-add" />
+            </svg>
+            Serviço
+          </a>
+        </li>
+        <li>
+          <a href="/pages/typeServices/listTypeServices/index.html" class="nav-link text-white">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#database-fill-add" />
+            </svg>
+            Tipo de Serviço
+          </a>
+        </li>
+        <li>
+          <a href="/pages/report/generateReport/index.html" class="nav-link active" aria-current="page">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#table" />
+            </svg>
+            Relatórios
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div class="container mt-5" id="type-service-container">
+      <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 100;">
+        <!-- Aqui serão inseridos os alertas -->
+      </div>
+      <h2>Relatórios</h2>
+      <hr />
+      <form id="serviceForm">
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <label for="typeServiceSelect" class="form-label">Tipo de Serviço:</label>
+            <select multiple class="form-select" id="typeServiceSelect"></select>
+          </div>
+          <div class="col-md-3 mb-3">
+            <label for="startDate" class="form-label">Data Início:</label>
+            <input type="date" class="form-control" id="startDate">
+          </div>
+          <div class="col-md-3 mb-3">
+            <label for="endDate" class="form-label">Data Fim:</label>
+            <input type="date" class="form-control" id="endDate">
+          </div>
+          <div class="col-md-3 mb-3">
+            <div style="display: flex; margin-top: 30px;">
+              <button id="buscarBtn" type="button" class="btn btn-primary">Buscar</button>
+              <button id="limparBtn" type="button" class="btn btn-secondary">Limpar</button>
+            </div>
+          </div>
+        </div>
+      </form>
+      <table id="serviceTable" class="table table-striped display" style="width:100%">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tipo de Serviço</th>
+            <th>Data do Serviço</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+  </div>
+
+
+  <script src="../../../libs/jquery/jquery-3.7.0.min.js"></script>
+  <script src="../../../libs/bootstrap-5.0.2/js/bootstrap.bundle.min.js"></script>
+  <script src="../../../libs/moment-2.29.4/moment-with-locales.min.js"></script>
+  <script src="../../../libs/datatable/datatables.min.js"></script>
+  <script src="../../../env.js"></script>
+  <script src="../../../script.js"></script>
+  <script>
+    // Função para preencher o campo "Tipo de Serviço" com opções da API usando Fetch
+    function populateTypeServiceSelect() {
+      fetch(`${BASE_URL}/type-service`)
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (data) {
+          let typeServiceSelect = document.getElementById('typeServiceSelect');
+
+          data.forEach(function (service) {
+            let option = document.createElement('option');
+            option.value = service.id;
+            option.text = service.name;
+            typeServiceSelect.appendChild(option);
+          });
+        })
+        .catch(function (error) {
+          console.error(error);
+        });
+    }
+
+    function fillDateStart() {
+      // Obtém a data atual
+      var currentDate = new Date();
+
+      // Calcula a data do mês anterior
+      var previousMonthDate = new Date();
+      previousMonthDate.setMonth(currentDate.getMonth() - 1);
+
+      // Formata a data do mês anterior no formato "YYYY-MM-DD" para preencher o campo
+      var previousMonthDateString = previousMonthDate.toISOString().split('T')[0];
+
+      // Define o valor padrão do campo "Data Início" como o mês anterior
+      document.getElementById('startDate').value = previousMonthDateString;
+    }
+
+    function fillDateEnd() {
+      // Obtém a data atual
+      var currentDate = new Date();
+
+      // Formata a data atual no formato "YYYY-MM-DD" para preencher o campo
+      var currentDateString = currentDate.toISOString().split('T')[0];
+
+      // Define o valor padrão do campo "Data Fim" como a data atual
+      document.getElementById('endDate').value = currentDateString;
+    }
+
+    // Chamar a função para popular o select ao carregar a página
+    window.onload = function () {
+      populateTypeServiceSelect();
+      fillDateStart();
+      fillDateEnd();
+    };
+  </script>
+  <script>
+    let dataTable;
+
+    function createBlankDatatable() {
+      dataTable = $('#serviceTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+          'copy', 'csv', 'excel', 'pdf'
+        ],
+        columns: [
+          { data: 'id' },
+          { data: 'type_service.name' },
+          { data: 'service_date' }
+        ],
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json'
+        }
+      });
+    }
+
+    function createDatatable(url) {
+      if (dataTable) {
+        dataTable.destroy();
+      }
+      dataTable = $('#serviceTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+          'copy', 'csv', 'excel', 'pdf'
+        ],
+        ajax: {
+          url: url,
+          dataSrc: ''
+        },
+        columns: [
+          { data: 'id' },
+          { data: 'type_service.name' },
+          {
+            data: 'service_date',
+            type: 'ptbr_date',
+            render: function (data, type, row) {
+              // Converter e formatar a data
+              let convertedDate = convertISOToDateTime(data);
+
+              return convertedDate;
+            }
+          }
+        ],
+        language: {
+          url: '../../../libs/datatable/languages/pt-BR.json'
+        }
+      });
+    }
+
+    // Evento de clique no botão "Buscar"
+    $('#buscarBtn').click(function (e) {
+      e.preventDefault();
+      let is_first_param_used = false;
+      // Obter os valores dos campos de filtro
+      let typeServiceSelect = $('#typeServiceSelect').val();
+      let startDate = $('#startDate').val();
+      let endDate = $('#endDate').val();
+
+      let url = `${BASE_URL}/service?`;
+
+      if (typeServiceSelect && typeServiceSelect.length > 0) {
+        for (key in typeServiceSelect) {
+          if (key == 0) {
+            is_first_param_used = true;
+            url += "type_services[]=" + typeServiceSelect[key];
+          } else {
+            url += "&type_services[]=" + typeServiceSelect[key];
+          }
+        }
+      }
+
+      if (startDate) {
+        if (is_first_param_used) {
+          url += "&date_start=" + startDate + " 00:00:00"
+        } else {
+          url += "date_start=" + startDate + " 00:00:00"
+        }
+      }
+
+      if (endDate) {
+        if (is_first_param_used) {
+          url += "&date_end=" + endDate + " 23:59:59"
+        } else {
+          url += "date_end=" + endDate + " 23:59:59"
+        }
+      }
+      // Atualizar os parâmetros da requisição Ajax
+      createDatatable(url);
+      //dataTable.ajax.url(url).load();
+    });
+
+    // Evento de clique no botão "Limpar"
+    $('#limparBtn').click(function () {
+      // Limpar os valores dos campos
+      $('#typeServiceSelect').val(null).trigger('change');
+      $('#startDate').val('');
+      $('#endDate').val('');
+    });
+
+    $(document).ready(function () {
+      createBlankDatatable();
+    });
+  </script>
+</body>
+
+</html>

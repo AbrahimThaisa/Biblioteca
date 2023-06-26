@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="../../../libs/bootstrap-5.0.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Biblioteca | Serviço | Cadastrar</title>
+</head>
+
+<body>
+
+  <div class="d-flex main-content">
+    <!-- Barra lateral -->
+    <div class="flex-shrink-0 p-3 text-white bg-dark d-flex flex-column sidebar">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <svg class="bi me-2" width="40" height="32">
+          <use xlink:href="#bootstrap"></use>
+        </svg>
+        <span class="fs-4">Biblioteca</span>
+      </a>
+      <hr>
+      <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+          <a href="/pages/services/listServices/index.html" class="nav-link active" aria-current="page">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#database-fill-add" />
+            </svg>
+            Serviço
+          </a>
+        </li>
+        <li>
+          <a href="/pages/typeServices/listTypeServices/index.html" class="nav-link text-white">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#database-fill-add" />
+            </svg>
+            Tipo de Serviço
+          </a>
+        </li>
+        <li>
+          <a href="/pages/report/generateReport/index.html" class="nav-link text-white">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#table" />
+            </svg>
+            Relatórios
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div class="container mt-5" id="type-service-container">
+      <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 100;">
+        <!-- Aqui serão inseridos os alertas -->
+      </div>
+      <h2>Cadastrar Serviço</h2>
+      <hr />
+      <form id="serviceForm">
+        <div class="mb-3">
+          <label for="typeServiceSelect" class="form-label">Tipo de Serviço:</label>
+          <select class="form-select" id="typeServiceSelect"></select>
+        </div>
+        <div class="mb-3">
+          <label for="serviceDateTime" class="form-label">Data e Hora do Serviço:</label>
+          <input type="datetime-local" class="form-control" id="serviceDateTime">
+        </div>
+        <div class="mb-3">
+          <label for="description" class="form-label">Descrição:</label>
+          <input type="text" class="form-control" id="description">
+        </div>
+        <button type="submit" class="btn btn-primary">Cadastrar</button>
+        <button type="button" id="cancel" class="btn btn-secondary">Cancelar</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../../libs/jquery/jquery-3.7.0.min.js"></script>
+  <script src="../../../libs/bootstrap-5.0.2/js/bootstrap.bundle.min.js"></script>
+  <script src="../../../env.js"></script>
+  <script src="../../../script.js"></script>
+  <script>
+    $(document).ready(function () {
+      setFormInitialValues();
+    });
+
+    function setFormInitialValues() {
+      // Carregar o combo "Tipo de Serviço" a partir da API
+      $.ajax({
+        url: `${BASE_URL}/type-service`,
+        method: 'GET',
+        success: function (response) {
+          // Criar as opções do combo
+          let options = '';
+          response.forEach(function (typeService) {
+            options += '<option value="' + typeService.id + '">' + typeService.name + '</option>';
+          });
+
+          // Adicionar as opções ao combo
+          $('#typeServiceSelect').html(options);
+        },
+        error: function (error) {
+          console.log('Erro ao carregar tipos de serviço:', error);
+        }
+      });
+
+      // Obtém o elemento do campo de data e hora
+      const serviceDateTimeInput = document.getElementById('serviceDateTime');
+
+      // Define o valor do campo de data e hora com a data e hora atual
+      serviceDateTimeInput.value = new Date(new Date().toString().split('GMT')[0] + ' UTC').toISOString().split('.')[0].slice(0, -3);
+
+      $('#description').val('');
+    }
+
+    document.getElementById('serviceForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var typeServiceId = $('#typeServiceSelect').val();
+      var description = $('#description').val();
+      var serviceDateTime = $('#serviceDateTime').val();
+      var formattedDateTimeString = serviceDateTime.concat(':00.000Z');
+
+      var data = {
+        id_type_service: typeServiceId,
+        description: description,
+        service_date: formattedDateTimeString
+      };
+
+      fetch(`${BASE_URL}/service`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+        .then(response => {
+          if (response.ok) {
+            alertSuccess(`Serviço cadastrado com sucesso!`);
+            setFormInitialValues();
+          } else {
+            response.json().then(errorData => {
+              console.log('Erro ao cadastrar serviço:', errorData);
+              alertError(alertError.innerHTML = `Erro ao cadastrar serviço: ${response.status} - ${errorData.message}`);
+            });
+          }
+        })
+        .catch(error => {
+          alertError(`Erro ao processar a resposta do servidor: ${error}`);
+        });
+    });
+
+    $('#cancel').on('click', function () {
+      var baseUrl = window.location.origin;
+      var relativePath = `pages/services/listServices/index.html`;
+      var fullUrl = baseUrl + '/' + relativePath;
+
+      window.location.href = fullUrl;
+    });
+  </script>
+</body>
+
+</html>

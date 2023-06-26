@@ -1,0 +1,17 @@
+{
+  "type": "mysql",
+  "port": 3307,
+  "host": "host.docker.internal",
+  "username": "root",
+  "password": "root",
+  "database": "biblioteca",
+  "migrations": [
+    "./src/shared/infra/typeorm/migrations/*.ts"
+  ],
+  "entities": [
+    "./src/modules/**/entities/*.ts"
+  ],
+  "cli": {
+    "migrationsDir": "./src/shared/infra/typeorm/migrations"
+  }
+}

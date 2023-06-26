@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="../../../libs/bootstrap-5.0.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="../../../styles.css">
+  <link href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.dataTables.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <title>Biblioteca | Tipo de Serviço | Editar</title>
+</head>
+
+<body>
+
+  <div class="d-flex main-content">
+    <!-- Barra lateral -->
+    <div class="flex-shrink-0 p-3 text-white bg-dark d-flex flex-column sidebar">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <svg class="bi me-2" width="40" height="32">
+          <use xlink:href="#bootstrap"></use>
+        </svg>
+        <span class="fs-4">Biblioteca</span>
+      </a>
+      <hr>
+      <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+          <a href="/pages/services/listServices/index.html" class="nav-link text-white" aria-current="page">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#database-fill-add" />
+            </svg>
+            Serviço
+          </a>
+        </li>
+        <li>
+          <a href="/pages/typeServices/listTypeServices/index.html" class="nav-link active" aria-current="page">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#database-fill-add" />
+            </svg>
+            Tipo de Serviço
+          </a>
+        </li>
+        <li>
+          <a href="/pages/report/generateReport/index.html" class="nav-link text-white">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#table" />
+            </svg>
+            Relatórios
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div class="container mt-5" id="type-service-container">
+      <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 100;">
+        <!-- Aqui serão inseridos os alertas -->
+      </div>
+      <h2>Editar Tipo de Serviço</h2>
+      <hr />
+      <form id="typeServiceForm">
+        <div class="mb-3">
+          <label for="id" class="form-label">Código:</label>
+          <input value="1" type="text" class="form-control" id="id" required disabled>
+        </div>
+        <div class="mb-3">
+          <label for="serviceName" class="form-label">Nome do tipo de serviço:</label>
+          <input type="text" class="form-control" id="serviceName" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Atualizar</button>
+        <button type="button" id="cancel" class="btn btn-secondary">Cancelar</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../../libs/jquery/jquery-3.7.0.min.js"></script>
+  <script src="../../../libs/bootstrap-5.0.2/js/bootstrap.bundle.min.js"></script>
+  <script src="../../../env.js"></script>
+  <script src="../../../script.js"></script>
+  <script>
+    // Obtém o parâmetro "id" da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+    document.getElementById('id').value = id;
+
+    // Função para preencher o formulário com os dados obtidos da API
+    function preencherFormulario(data) {
+      // Preenche os campos do formulário
+      document.getElementById('serviceName').value = data.name;
+    }
+
+    // Faz a requisição GET para obter os dados do tipo de serviço
+    fetch(`${BASE_URL}/type-service/${id}`)
+      .then(response => response.json())
+      .then(result => {
+        // Chama a função para preencher o formulário com os dados obtidos
+        preencherFormulario(result);
+      })
+      .catch(error => {
+        console.error('Erro ao obter os dados do tipo de serviço:', error);
+      });
+
+    // Seleciona o formulário e adiciona o manipulador de eventos para o evento de envio
+    const form = document.getElementById('typeServiceForm');
+    form.addEventListener('submit', function (event) {
+      event.preventDefault(); // Evita o comportamento padrão de envio do formulário
+
+      // Obtém o valor do campo "Nome do tipo de serviço"
+      const serviceName = document.getElementById('serviceName').value;
+
+      // Cria o objeto com os dados a serem enviados no corpo da requisição
+      const data = {
+        name: serviceName
+      };
+
+      // Faz a requisição PUT para atualizar os dados do tipo de serviço
+      fetch(`${BASE_URL}/type-service/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+        .then(response => {
+          if (response.ok) {
+            alertSuccess(`Tipo de serviço atualizado com sucesso!`);
+          } else {
+            response.json().then(errorData => {
+              console.log('Erro ao atualizar tipo de serviço:', errorData);
+              alertError(`Erro ao atualizar tipo de serviço: ${response.status} - ${errorData.message}`);
+            });
+          }
+        })
+        .catch(error => {
+          alertError(`Erro ao processar a resposta do servidor: ${error}`);
+        });
+    });
+
+    $('#cancel').on('click', function () {
+      var baseUrl = window.location.origin;
+      var relativePath = `pages/typeServices/listTypeServices/index.html`;
+      var fullUrl = baseUrl + '/' + relativePath;
+
+      window.location.href = fullUrl;
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="../../../libs/bootstrap-5.0.2/css/bootstrap.min.css">
+  <link href="../../../libs/datatable/datatables.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../styles.css">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Biblioteca | Tipo de Serviço | Listar</title>
+</head>
+
+<body>
+
+  <div class="d-flex main-content">
+    <!-- Barra lateral -->
+    <div class="flex-shrink-0 p-3 text-white bg-dark d-flex flex-column sidebar">
+      <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <svg class="bi me-2" width="40" height="32">
+          <use xlink:href="#bootstrap"></use>
+        </svg>
+        <span class="fs-4">Biblioteca</span>
+      </a>
+      <hr>
+      <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+          <a href="/pages/services/listServices/index.html" class="nav-link text-white" aria-current="page">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#database-fill-add" />
+            </svg>
+            Serviço
+          </a>
+        </li>
+        <li>
+          <a href="/pages/typeServices/listTypeServices/index.html" class="nav-link active" aria-current="page">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#database-fill-add" />
+            </svg>
+            Tipo de Serviço
+          </a>
+        </li>
+        <li>
+          <a href="/pages/report/generateReport/index.html" class="nav-link text-white">
+            <svg class="bi me-2" width="16" height="16" fill="currentColor" role="img" aria-label="Tools">
+              <use xlink:href="../../../libs/bootstrap-icons-1.10.5/bootstrap-icons.svg#table" />
+            </svg>
+            Relatórios
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div class="container mt-5" id="type-service-container">
+      <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 100;">
+        <!-- Aqui serão inseridos os alertas -->
+      </div>
+      <h2>Listagem de Tipo de Serviço</h2>
+      <hr />
+      <div style="display: flex; flex: 1; flex-direction: row; justify-content: end; margin-bottom: 10px;">
+        <button id="createTypeService" type="button" class="btn btn-primary" style="width: 100px">Novo</button>
+      </div>
+      <table id="typeServiceTable" class="table table-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Data de Criação</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+  </div>
+
+  <div id="deleteModal" class="modal fade" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteModalLabel">Confirmar Exclusão</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Tem certeza que deseja excluir este registro?
+        </div>
+        <div class="modal-footer">
+          <button id="deleteConfirmBtn" type="button" class="btn btn-danger">Confirmar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="../../../libs/jquery/jquery-3.7.0.min.js"></script>
+  <script src="../../../libs/bootstrap-5.0.2/js/bootstrap.bundle.min.js"></script>
+  <script src="../../../libs/moment-2.29.4/moment-with-locales.min.js"></script>
+  <script src="../../../libs/datatable/datatables.min.js"></script>
+  <script src="../../../env.js"></script>
+  <script src="../../../script.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('#typeServiceTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+          'copy', 'csv', 'excel', 'pdf'
+        ],
+        ajax: {
+          url: `${BASE_URL}/type-service`,
+          dataSrc: ''
+        },
+        columns: [
+          { data: 'id' },
+          { data: 'name' },
+          {
+            data: 'created_at',
+            type: 'ptbr_date',
+            render: function (data, type, row) {
+              // Converter e formatar a data
+              let convertedDate = convertISOToDateTime(data);
+
+              return convertedDate;
+            }
+          },
+          {
+            data: null,
+            render: function (data, type, row) {
+              return '<button type="button" class="btn btn-danger btn-sm delete-btn">Excluir</button>' +
+                '<button type="button" class="btn btn-primary btn-sm edit-btn" style="margin-left: 8px;">Editar</button>';
+            }
+          }
+        ],
+        language: {
+          url: '../../../libs/datatable/languages/pt-BR.json'
+        },
+        order: [[0, 'desc']]
+      });
+
+      $('#typeServiceTable').on('click', '.delete-btn', function () {
+        console.log("clicked! - 1");
+        var data = $(this).closest('tr').find('td:first-child').text();
+
+        $('#deleteModal').modal('show');
+
+        $('#deleteConfirmBtn').on('click', function () {
+          console.log("clicked! - 2");
+          $('#deleteModal').modal('hide');
+
+          $.ajax({
+            url: `${BASE_URL}/type-service/${data}`,
+            method: 'DELETE',
+            success: function () {
+              console.log('Registro excluído com sucesso:', data);
+
+              // Obtém a referência do DataTable
+              var dataTable = $('#typeServiceTable').DataTable();
+
+              // Recarrega os dados do DataTable
+              dataTable.ajax.reload();
+
+              alertSuccess(`Tipo de serviço excluido com sucesso!`);
+            },
+            error: function (error) {
+              if (error.responseJSON && error.responseJSON.message) {
+                alertError(`Erro ao excluir tipo de serviço: ${error.status} - ${error.responseJSON.message}`);
+              } else {
+                alertError(`Erro ao processar a resposta do servidor: ${error}`);
+              }
+            }
+          });
+          $('#deleteConfirmBtn').off('click');
+        });
+      });
+
+      $('#typeServiceTable').on('click', '.edit-btn', function () {
+        var data = $(this).closest('tr').find('td:first-child').text();
+        // Aqui você pode implementar a lógica para editar o registro com o ID "data"
+        console.log('Editar registro com ID:', data);
+        var baseUrl = window.location.origin;
+        var relativePath = `pages/typeServices/editTypeService/index.html?id=${data}`;
+        var fullUrl = baseUrl + '/' + relativePath;
+
+        window.location.href = fullUrl;
+      });
+
+      $('#createTypeService').on('click', function () {
+        var baseUrl = window.location.origin;
+        var relativePath = `pages/typeServices/createTypeServices/index.html`;
+        var fullUrl = baseUrl + '/' + relativePath;
+
+        window.location.href = fullUrl;
+      });
+    });
+  </script>
+</body>
+
+</html>
